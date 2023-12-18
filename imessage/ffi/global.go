@@ -43,7 +43,7 @@ import (
 	"github.com/beeper/imessage/imessage/direct/ids"
 	"github.com/beeper/imessage/imessage/direct/nacserv"
 	"github.com/beeper/imessage/imessage/direct/util/httputil"
-	"github.com/beeper/imessage/imessage/ipc/imux"
+	"github.com/beeper/imessage/imessage/ffi/imux"
 	"github.com/beeper/imessage/ipc"
 	"github.com/beeper/imessage/msgconv"
 )

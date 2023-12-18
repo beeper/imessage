@@ -16,6 +16,7 @@
 
 package main
 
+import "C"
 import (
 	"context"
 	_ "embed"
@@ -89,8 +90,11 @@ func analyticsTrackOverIPC(event string, properties map[string]any) error {
 	})
 }
 
-func main() {
-	writer := ipc.NewLockedWriter(os.Stdout)
+func main() {}
+
+//export start
+func start() {
+	writer := ipc.NewLockedWriter(&FFIStdout)
 	zeroconfig.RegisterWriter(writerTypeStdoutIPC, func(config *zeroconfig.WriterConfig) (io.Writer, error) {
 		return writer, nil
 	})
@@ -121,7 +125,7 @@ func main() {
 	}
 
 	ipcLog := log.With().Str("component", "ipc").Logger()
-	global.IPC = ipc.NewProcessor(writer, os.Stdin, &ipcLog)
+	global.IPC = ipc.NewProcessor(writer, FFIStdinReader, &ipcLog)
 	global.IPC.SetHandler(CmdLogin, ipc.TypedHandler(fnLogin))
 	global.IPC.SetHandler(CmdMessage, ipc.TypedHandler(fnMessage))
 	global.IPC.SetHandler(CmdMultipartMessage, ipc.TypedHandler(fnMultipartMessage))
@@ -228,7 +232,6 @@ func main() {
 		log.Err(err).Msg("Failed to close database")
 	}
 	log.Info().Msg("Shutdown preparations complete, exiting")
-	os.Exit(0)
 }
 
 func initialConfigure(ctx context.Context) {

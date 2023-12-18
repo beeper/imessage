@@ -40,7 +40,7 @@ build_imessage() {
 
   (set -x; CGO_LDFLAGS="-lm -llog" CGO_ENABLED=1 GOOS=android GOARCH=$GOARCH GOARM=$GOARM \
   CC="$NDK_ROOT/toolchains/llvm/prebuilt/$NDK_ARCH/bin/$NDK_TARGET$ANDROID_API-clang" \
-  go build -ldflags "$LDFLAGS" -o "$LIB_JNI"/libima.so ./imessage/ipc)
+  go build -ldflags "$LDFLAGS" -o "$LIB_JNI"/libima.so ./imessage/ffi)
 }
 
 build_imessage armeabi-v7a armv7a-linux-androideabi arm 7
