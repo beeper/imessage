@@ -20,9 +20,12 @@ import "C"
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -30,6 +33,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/rs/zerolog"
 	deflog "github.com/rs/zerolog/log"
@@ -40,7 +44,9 @@ import (
 
 	"github.com/beeper/imessage/analytics"
 	"github.com/beeper/imessage/database"
+	"github.com/beeper/imessage/imessage/direct"
 	"github.com/beeper/imessage/imessage/direct/ids"
+	"github.com/beeper/imessage/imessage/direct/nacserv"
 	"github.com/beeper/imessage/imessage/direct/util/uri"
 	"github.com/beeper/imessage/ipc"
 	"github.com/beeper/imessage/msgconv"
@@ -355,4 +361,39 @@ type ReqStarted struct {
 	LoggedIn bool `json:"logged_in"`
 
 	PendingNACURL bool `json:"pending_nac_url"`
+}
+
+// init_config is called over FFI to initialize the bridge configuration.
+//
+//export init_config
+func init_config(data *C.char, n C.int) {
+	must(0, json.Unmarshal(C.GoBytes(unsafe.Pointer(data), n), &global.Cfg))
+
+	global.NAC = &nacserv.Client{
+		URL:     global.Cfg.NACServURL,
+		Token:   global.Cfg.NACServToken,
+		IsRelay: global.Cfg.NACServIsRelay,
+
+		BeeperToken: global.Cfg.IMAToken,
+	}
+
+	global.IM = direct.NewConnector(global.NAC, handleEvent, nil, nil, global.Cfg.EnablePairECSending, nil, manualLookupRatelimiter)
+	global.IM.LoginTestConfig = global.Cfg.LoginTest
+
+	global.SecondaryIM = direct.NewConnector(global.NAC, handleSecondaryEvent, nil, nil, false, nil, manualLookupRatelimiter)
+	if global.Cfg.AttachmentDir == "" {
+		global.Cfg.AttachmentDir = "attachments"
+	}
+	if global.Cfg.DeviceName != "" {
+		ids.DeviceName = global.Cfg.DeviceName
+	}
+	var err error
+	global.Cfg.AttachmentDir, err = filepath.Abs(global.Cfg.AttachmentDir)
+	if err != nil {
+		panic(fmt.Errorf("failed to get absolute path of attachment directory: %w", err))
+	}
+	err = os.MkdirAll(global.Cfg.AttachmentDir, 0700)
+	if err != nil {
+		panic(fmt.Errorf("failed to create attachment directory: %w", err))
+	}
 }

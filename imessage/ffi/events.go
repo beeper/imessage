@@ -826,10 +826,6 @@ func handleDelivered(status *direct.MessageDelivered) {
 	}
 }
 
-type ReqStarted struct {
-	LoggedIn bool `json:"logged_in"`
-}
-
 func handleEvent(evt any) {
 	switch typedEvt := evt.(type) {
 	case *imessage.Message:
