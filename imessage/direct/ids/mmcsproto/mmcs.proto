@@ -1,0 +1,153 @@
+syntax = "proto3";
+package mmcsp;
+
+option go_package = "../mmcsproto";
+
+message AuthorizePut {
+	message PutData {
+		message Chunk {
+			bytes sig = 1;
+			uint32 size = 3;
+		}
+		message Footer {
+			uint32 chunk_count = 1;
+			string profile_type = 101;
+			uint32 f103 = 103;
+		}
+		bytes sig = 1;
+		string token = 2;
+		repeated Chunk chunks = 3;
+		Footer footer = 8;
+	}
+	PutData data = 1;
+	uint32 f3 = 3;
+}
+
+message ConfirmResponse {
+	message Request {
+		message Metric {
+			string n = 1;
+			string v = 2;
+		}
+		string url = 1;
+		uint32 status = 2;
+		repeated Metric edgeInfo = 4;
+		optional bytes md5sum = 7;
+		repeated Metric metrics = 8;
+		repeated Metric metrics2 = 9;
+		string token = 10;
+		uint32 f13 = 13;
+	}
+	repeated Request inner = 1;
+	optional bytes confirm_data = 2;
+}
+
+message HTTPRequest {
+	message Header {
+		string name = 1;
+		string value = 2;
+	}
+	string domain = 1;
+	uint32 port = 2;
+	string method = 3;
+	string path = 4;
+	string protocol = 5;
+	string protocolVer = 6;
+	string scheme = 7;
+	repeated Header headers = 8;
+	string datacenter = 9;
+	uint64 expiryTimeMillis = 11; // uncertain, this is 5 minutes before x-apple-expires in headers
+	repeated Header f12 = 12; // in the old protocol, this contained an X-Apple-Cache-iCloud header with a json value?
+	uint32 f13 = 13;
+}
+
+message Container {
+	message ChunkMeta {
+		bytes checksum = 1;
+		uint64 size = 3;
+		uint32 offset = 4;
+	}
+	message ChunkWrapper {
+		ChunkMeta meta = 1;
+	}
+	HTTPRequest request = 1;
+//	repeated ChunkMeta legacyChunks = 2;
+	string clAuthP1 = 3;
+	string clAuthP2 = 4;
+	repeated ChunkWrapper chunks = 5;
+}
+
+message GetData {
+	message ChunkReferences {
+		message ChunkReference {
+			uint32 container_index = 1;
+			uint32 chunk_index = 2;
+		}
+		bytes fileChecksum = 1;
+		repeated ChunkReference chunkReferences = 2;
+		uint32 f5 = 5;
+	}
+	repeated Container containers = 1;
+	ChunkReferences references = 2;
+}
+
+message ErrorInfo {
+	string domain = 1; // usually "apple.mme"
+	uint32 code = 2; // 3 for file not found
+	string message = 3;
+}
+
+message GetError {
+	bytes signature = 1;
+	ErrorInfo info = 2;
+}
+
+message PutCompleteError {
+	string token = 1; // same as clAuthP1
+	ErrorInfo info = 2;
+}
+
+message AuthorizeGetResponse {
+	optional GetData data = 1;
+	optional GetError error = 2;
+	uint32 f4 = 4; // always 2?
+}
+
+message AuthorizePutResponse {
+	message UploadTarget {
+		message ChunkIdentifier {
+			bytes chunk_id = 1;
+		}
+		string clAuthP1 = 1;
+		HTTPRequest request = 2;
+//		repeated bytes legacyChunks = 3;
+		string clAuthP2 = 4;
+		repeated ChunkIdentifier chunks = 5;
+	}
+	message F4 {
+		bytes signature = 1;
+		uint32 f2 = 2;
+	}
+	repeated UploadTarget targets = 1;
+	// is 2 an error here too?
+	uint32 f3 = 3;
+	F4 f4 = 4;
+	optional bytes confirm_data = 6;
+}
+
+message PutFooter {
+	bytes md5_sum = 1;
+	optional bytes confirm_data = 2;
+}
+
+message PutCompleteResponse {
+	message Inner {
+		bytes signature = 1;
+		int32 f2 = 2; // 1
+		string f3 = 3; // same as the "signature" (f1) in GetError
+		int64 timestampMS = 5;
+	}
+	PutCompleteError f1 = 1;
+	GetError f2 = 2; // whole file error?
+	Inner f3 = 3;
+}

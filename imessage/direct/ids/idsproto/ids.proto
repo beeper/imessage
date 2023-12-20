@@ -1,0 +1,32 @@
+syntax = "proto3";
+option go_package = "../idsproto";
+
+message KeyTransparencyLoggableData {
+	optional bytes ngmPublicIdentity = 1;
+	optional uint32 ngmVersion = 2;
+	optional uint32 ktVersion = 3;
+}
+
+message NgmPublicIdentity {
+	optional bytes publicKey = 1;
+}
+
+message PublicDevicePrekey {
+	bytes prekey = 1;
+	bytes prekeySignature = 2;
+	double timestamp = 3;
+}
+
+message OuterMessage {
+	bytes encryptedPayload = 1;
+	bytes ephemeralPubKey = 2;
+	bytes signature = 3;
+	bytes keyValidator = 99;
+}
+
+message InnerMessage {
+	bytes message = 1;
+	uint32 counter = 2;
+	bytes ktGossipData = 3;
+	bytes debugInfo = 99;
+}
