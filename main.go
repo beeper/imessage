@@ -115,7 +115,7 @@ func (br *IMBridge) Start() {
 		err := user.Start()
 		if errors.Is(err, ErrNoNAC) {
 			user.zlog.Warn().Msg("NAC not configured, logging out user")
-			state := status.BridgeState{StateEvent: status.StateUnknownError, Error: "im-nacserv-not-configured"}
+			state := status.BridgeState{StateEvent: status.StateBadCredentials, Error: "im-nacserv-not-configured"}
 			stateForDB := state.Fill(user)
 			user.BridgeState.Send(state)
 			data, _ := json.Marshal(&stateForDB)
