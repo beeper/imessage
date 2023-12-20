@@ -97,6 +97,11 @@ var Err2FARequired = ipc.Error{
 	Message: "2-factor authentication required",
 }
 
+var ErrBadRegistrationCode = ipc.Error{
+	Code:    "bad-registration-code",
+	Message: "Invalid registration code or provider not reachable",
+}
+
 func fnLogin(ctx context.Context, req ReqLogin) any {
 	im := global.IM
 	if req.Secondary {
@@ -1180,7 +1185,7 @@ func fnSetRelay(ctx context.Context, req ReqSetRelay) any {
 	versions, err := global.IM.FetchValidationVersions(ctx)
 	if err != nil {
 		zerolog.Ctx(ctx).Err(err).Msg("Failed to fetch versions from validation relay")
-		return fmt.Errorf("failed to get versions: %w", err)
+		return ErrBadRegistrationCode
 	}
 	if !global.InitialConfigureDone {
 		global.InitialConfigureDone = true

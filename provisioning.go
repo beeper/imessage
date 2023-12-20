@@ -396,8 +396,8 @@ func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
 			Str("token", req.Token[:10]+"…").
 			Msg("Failed to fetch versions from relay")
 		jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
-			Err:     "Failed to fetch versions from relay",
-			ErrCode: "COM.BEEPER.BAD_RELAY",
+			Err:     "Invalid registration code or provider not reachable",
+			ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
 		})
 		return
 	}
