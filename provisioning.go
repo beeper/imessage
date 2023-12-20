@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"maunium.net/go/mautrix/bridge/status"
+
 	"github.com/beeper/imessage/database"
 	"github.com/beeper/imessage/imessage/direct/nacserv"
 	"github.com/beeper/imessage/imessage/direct/util/uri"
@@ -411,7 +413,12 @@ func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
 	// Now that we know the relay exists, save it to the database
 	prov.bridge.DB.KV.Set(database.KVNACServURL, req.URL)
 	prov.bridge.DB.KV.Set(database.KVNACServToken, req.Token)
-	user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
+	if user.bridge.DB.KV.Get(database.KVHackyNACErrorPersistence) != "" {
+		if user.AppleRegistration == nil {
+			user.bridge.SendGlobalBridgeState(status.BridgeState{StateEvent: status.StateUnconfigured})
+		}
+		user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
+	}
 
 	if user.IM != nil {
 		user.IM.NACServ = user.makeNACClient()
