@@ -277,10 +277,11 @@ func (user *User) Start() error {
 		)
 		user.IM.LoginTestConfig = user.bridge.Config.IMessage.LoginTest
 		cfg := user.AppleRegistration
+		cfgWasNil := false
 		if cfg == nil {
+			cfgWasNil = true
 			cfg = &ids.Config{}
 			user.AppleRegistration = cfg
-			user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
 		}
 		ctx := user.zlog.WithContext(context.TODO())
 		err := user.IM.Configure(ctx, cfg, false)
@@ -288,6 +289,9 @@ func (user *User) Start() error {
 			user.zlog.Err(err).Msg("Failed to configure iMessage connection")
 			user.BridgeState.Send(status.BridgeState{StateEvent: status.StateUnknownError, Error: "im-albert-fail"})
 			return err
+		}
+		if cfgWasNil {
+			user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
 		}
 		go user.IM.Run(user.zlog, nil, nil)
 
