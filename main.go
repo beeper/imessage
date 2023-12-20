@@ -20,6 +20,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"sync"
 
@@ -114,7 +115,11 @@ func (br *IMBridge) Start() {
 		err := user.Start()
 		if errors.Is(err, ErrNoNAC) {
 			user.zlog.Warn().Msg("NAC not configured, logging out user")
-			user.BridgeState.Send(status.BridgeState{StateEvent: status.StateUnknownError, Error: "im-nacserv-not-configured"})
+			state := status.BridgeState{StateEvent: status.StateUnknownError, Error: "im-nacserv-not-configured"}
+			stateForDB := state.Fill(user)
+			user.BridgeState.Send(state)
+			data, _ := json.Marshal(&stateForDB)
+			br.DB.KV.Set(database.KVHackyNACErrorPersistence, string(data))
 			user.AppleRegistration = nil
 			// TODO don't ignore errors
 			user.Update(context.TODO())
@@ -123,7 +128,14 @@ func (br *IMBridge) Start() {
 		}
 	}
 	if !startedAnyUsers {
-		br.SendGlobalBridgeState(status.BridgeState{StateEvent: status.StateUnconfigured})
+		if hackyNACErrorPersistence := br.DB.KV.Get(database.KVHackyNACErrorPersistence); hackyNACErrorPersistence != "" {
+			var state status.BridgeState
+			_ = json.Unmarshal([]byte(hackyNACErrorPersistence), &state)
+			br.ZLog.Debug().Interface("bridge_state", state).Msg("Sending cached NAC error state")
+			br.GetUserByMXID(state.UserID).BridgeState.Send(state)
+		} else {
+			br.SendGlobalBridgeState(status.BridgeState{StateEvent: status.StateUnconfigured})
+		}
 	}
 
 	br.WaitWebsocketConnected()

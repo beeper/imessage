@@ -34,6 +34,8 @@ const (
 
 	KVNACServToken = "nacserv_override_token"
 	KVNACServURL   = "nacserv_override_url"
+
+	KVHackyNACErrorPersistence = "hacky_nac_error_persistence"
 )
 
 func (kvq *KeyValueQuery) Get(key string) (value string) {

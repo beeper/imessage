@@ -411,6 +411,7 @@ func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
 	// Now that we know the relay exists, save it to the database
 	prov.bridge.DB.KV.Set(database.KVNACServURL, req.URL)
 	prov.bridge.DB.KV.Set(database.KVNACServToken, req.Token)
+	user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
 
 	if user.IM != nil {
 		user.IM.NACServ = user.makeNACClient()

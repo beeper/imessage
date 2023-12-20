@@ -280,6 +280,7 @@ func (user *User) Start() error {
 		if cfg == nil {
 			cfg = &ids.Config{}
 			user.AppleRegistration = cfg
+			user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
 		}
 		ctx := user.zlog.WithContext(context.TODO())
 		err := user.IM.Configure(ctx, cfg, false)
@@ -314,6 +315,7 @@ func (user *User) Logout() {
 		user.zlog.Warn().Err(err).Msg("Failed to logout")
 	}
 	user.BridgeState.Send(status.BridgeState{StateEvent: status.StateLoggedOut})
+	user.bridge.DB.KV.Delete(database.KVHackyNACErrorPersistence)
 	user.Stop()
 	user.AppleRegistration = nil
 	// TODO don't ignore errors
