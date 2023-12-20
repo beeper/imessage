@@ -4,6 +4,8 @@ A Matrix-iMessage puppeting bridge.
 ## Documentation
 The bridge works like any other mautrix-go bridge, so the instructions at
 <https://docs.mau.fi/bridges/go/setup.html> can be applied directly.
+You can find precompiled binaries from the GitLab CI at
+<https://mau.dev/mautrix/imessagego>.
 
 Additionally, the bridge requires a registration provider running on a [Mac] or
 [jailbroken iPhone], as well as a [relay server] to help the bridge and
