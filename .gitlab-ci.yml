@@ -1,0 +1,6 @@
+include:
+- project: 'mautrix/ci'
+  file: '/go.yml'
+
+variables:
+  BINARY_NAME: beeper-imessage
