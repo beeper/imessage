@@ -34,7 +34,12 @@ var normalTransport = &http.Transport{
 	TLSHandshakeTimeout:   10 * time.Second,
 	ResponseHeaderTimeout: 5 * time.Second,
 }
-var slowTransport = &http.Transport{}
+var slowTransport = &http.Transport{
+	DialContext:           (&net.Dialer{Timeout: 20 * time.Second}).DialContext,
+	ForceAttemptHTTP2:     true,
+	TLSHandshakeTimeout:   20 * time.Second,
+	ResponseHeaderTimeout: 60 * time.Second,
+}
 var appleTLSTransport = &http.Transport{
 	TLSClientConfig: &tls.Config{
 		RootCAs: appletls.CertPool,

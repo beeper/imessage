@@ -87,7 +87,7 @@ func (c *Client) fetch(ctx context.Context, url string, body []byte, dataType st
 
 	log.Info().Str("url", req.URL.String()).Str("data_type", dataType).Msg("Fetching nacserv data")
 
-	resp, data, err := httputil.Do(httputil.Normal, req)
+	resp, data, err := httputil.Do(httputil.Slow, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	} else if resp.StatusCode != http.StatusOK {
