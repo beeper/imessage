@@ -780,6 +780,9 @@ func fnRegisterPhoneNumber(ctx context.Context, req ReqRegisterPhoneNumber) any 
 	// If there's no response text, we need to ask for the app to send an SMS
 	// (or give us the most recently received SMS from the gateway if there is one).
 	if req.ResponseText == "" {
+		if len(im.User.PushToken) == 0 {
+			return fmt.Errorf("no push token available (can't connect to apns?)")
+		}
 		var err error
 		resp := RespRegisterPhoneNumber{
 			Status:  RegisterPhoneNumberStatusSendSMS,
@@ -1181,24 +1184,32 @@ func fnSetRelay(ctx context.Context, req ReqSetRelay) any {
 	global.NAC.URL = req.URL
 	global.NAC.Token = req.Token
 	global.NAC.IsRelay = !req.NotRelay
+	log := zerolog.Ctx(ctx)
 	versions, err := global.IM.FetchValidationVersions(ctx)
 	if err != nil {
-		zerolog.Ctx(ctx).Err(err).Msg("Failed to fetch versions from validation relay")
+		log.Err(err).Msg("Failed to fetch versions from validation relay")
 		return ErrBadRegistrationCode
 	}
 	if !global.InitialConfigureDone {
 		global.InitialConfigureDone = true
-		zerolog.Ctx(ctx).Info().Msg("Running initial configuration and connection after relay was updated")
+		log.Info().Msg("Running initial configuration and connection after relay was updated")
 		initialConfigure(global.Ctx)
-		go global.IM.Run(*global.Log, nil, nil)
+		var connectWG sync.WaitGroup
+		connectWG.Add(1)
+		go global.IM.Run(*global.Log, sync.OnceFunc(func() {
+			connectWG.Done()
+		}), nil)
+		log.Info().Msg("Waiting for APNs connection")
+		connectWG.Wait()
+		log.Info().Msg("Connection finished, returning from set-relay")
 	} else if global.IM.HasValidIDCerts() {
-		zerolog.Ctx(ctx).Info().Msg("Re-registering after relay was updated")
+		log.Info().Msg("Re-registering after relay was updated")
 		err := global.IM.RegisterIDS(ctx, true)
 		if err != nil {
 			return err
 		}
 	} else {
-		zerolog.Ctx(ctx).Info().Msg("Not doing anything after relay was updated")
+		log.Info().Msg("Not doing anything after relay was updated")
 	}
 	return RespSetRelay{
 		CanPhoneRegister: versions.SoftwareName == "iPhone OS",
