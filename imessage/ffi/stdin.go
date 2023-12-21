@@ -14,28 +14,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package ffi
 
-import "C"
 import (
 	"io"
-	"unsafe"
 )
 
 var FFIStdinReader, FFIStdinWriter = io.Pipe()
 
-// stdin_write is a function which allows C code to write to the fake "stdin"
-// buffer.
-//
-// This function returns the number of bytes written, or -1 if an error
-// occurred.
-//
-//export stdin_write
-func stdin_write(data *C.char, n C.int) C.int {
-	buf := C.GoBytes(unsafe.Pointer(data), n)
-	written, err := FFIStdinWriter.Write(buf)
+func StdinWrite(data []byte) int {
+	written, err := FFIStdinWriter.Write(data)
 	if err != nil {
-		return C.int(-1)
+		return -1
 	}
-	return C.int(written)
+	return written
 }

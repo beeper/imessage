@@ -14,31 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
-
-/*
-#include <stdio.h>
-
-// stdout_callback is a function pointer to a function that takes a string and
-// returns nothing.
-typedef void (*stdout_callback_t)(const char*, int);
-void stdout_write(stdout_callback_t callback, const char* data, int n);
-*/
-import "C"
-import "unsafe"
+package ffi
 
 type ffiStdout struct {
-	callback C.stdout_callback_t
+	callback func([]byte)
 }
 
 func (s *ffiStdout) Write(p []byte) (n int, err error) {
-	C.stdout_write(s.callback, (*C.char)(unsafe.Pointer(&p[0])), C.int(len(p)))
+	s.callback(p)
 	return len(p), nil
 }
 
 var FFIStdout = ffiStdout{}
 
-//export set_stdout_callback
-func set_stdout_callback(callback C.stdout_callback_t) {
+func SetStdoutCallback(callback func([]byte)) {
 	FFIStdout.callback = callback
 }

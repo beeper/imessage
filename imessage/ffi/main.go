@@ -14,13 +14,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package ffi
 
-import "C"
 import (
 	"context"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -33,7 +31,6 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/rs/zerolog"
 	deflog "github.com/rs/zerolog/log"
@@ -41,6 +38,7 @@ import (
 	_ "go.mau.fi/util/dbutil/litestream"
 	"go.mau.fi/util/exzerolog"
 	"go.mau.fi/zeroconfig"
+	_ "golang.org/x/mobile/bind"
 
 	"github.com/beeper/imessage/analytics"
 	"github.com/beeper/imessage/database"
@@ -96,10 +94,7 @@ func analyticsTrackOverIPC(event string, properties map[string]any) error {
 	})
 }
 
-func main() {}
-
-//export start
-func start() {
+func Start() {
 	writer := ipc.NewLockedWriter(&FFIStdout)
 	zeroconfig.RegisterWriter(writerTypeStdoutIPC, func(config *zeroconfig.WriterConfig) (io.Writer, error) {
 		return writer, nil
@@ -363,12 +358,7 @@ type ReqStarted struct {
 	PendingNACURL bool `json:"pending_nac_url"`
 }
 
-// init_config is called over FFI to initialize the bridge configuration.
-//
-//export init_config
-func init_config(data *C.char, n C.int) {
-	must(0, json.Unmarshal(C.GoBytes(unsafe.Pointer(data), n), &global.Cfg))
-
+func InitConfig(data []byte) {
 	global.NAC = &nacserv.Client{
 		URL:     global.Cfg.NACServURL,
 		Token:   global.Cfg.NACServToken,

@@ -19,3 +19,6 @@
 /.android-ipc-bin
 /imgo.h
 /imgo.so
+
+/imessage-sources.jar
+/imessage.aar

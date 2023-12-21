@@ -22,22 +22,23 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.21.1'
+    - name: Install gomobile
+      run: |
+        go install golang.org/x/mobile/cmd/gomobile@latest
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '17'
         cache: 'gradle'
-    - name: Build imessage.so
-      run: ./android/imessage.sh
     - name: Build AAR
-      run: ./android/gradlew -p android :library:assembleRelease
-    - name: Publish to GitHub Packages
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: ./android/gradlew -p android :library:publish
+      run: gomobile bind -target=android -androidapi 26 -o imessage.aar ./imessage/ffi
+    # - name: Publish to GitHub Packages
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   run: ./android/gradlew -p android :library:publish
     - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
         name: aar
-        path: ./android/library/build/outputs/aar/library-release.aar
+        path: ffi.aar
