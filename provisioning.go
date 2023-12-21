@@ -397,10 +397,17 @@ func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
 			Str("url", req.URL).
 			Str("token", req.Token[:10]+"…").
 			Msg("Failed to fetch versions from relay")
-		jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
-			Err:     "Invalid registration code or provider not reachable",
-			ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
-		})
+		if errors.Is(err, nacserv.ErrProviderNotReachable) {
+			jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
+				Err:     "Invalid registration code or provider not reachable",
+				ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
+			})
+		} else {
+			jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
+				Err:     "Failed to check registration code",
+				ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
+			})
+		}
 		return
 	}
 	zerolog.Ctx(r.Context()).Info().

@@ -41,6 +41,7 @@ import (
 	"github.com/beeper/imessage/imessage/direct"
 	"github.com/beeper/imessage/imessage/direct/ids"
 	"github.com/beeper/imessage/imessage/direct/ids/types"
+	"github.com/beeper/imessage/imessage/direct/nacserv"
 	"github.com/beeper/imessage/imessage/direct/util/uri"
 	"github.com/beeper/imessage/ipc"
 	"github.com/beeper/imessage/msgconv"
@@ -1188,7 +1189,10 @@ func fnSetRelay(ctx context.Context, req ReqSetRelay) any {
 	versions, err := global.IM.FetchValidationVersions(ctx)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch versions from validation relay")
-		return ErrBadRegistrationCode
+		if errors.Is(err, nacserv.ErrProviderNotReachable) {
+			return ErrBadRegistrationCode
+		}
+		return err
 	}
 	if !global.InitialConfigureDone {
 		global.InitialConfigureDone = true

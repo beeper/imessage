@@ -39,6 +39,8 @@ type Client struct {
 	IsRelay bool
 }
 
+var ErrProviderNotReachable = errors.New("invalid registration code or provider not reachable")
+
 type Response struct {
 	Name       string        `json:"name"`
 	Data       []byte        `json:"data"`
@@ -89,6 +91,9 @@ func (c *Client) fetch(ctx context.Context, url string, body []byte) (*Response,
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	} else if resp.StatusCode != http.StatusOK {
+		if c.IsRelay && resp.StatusCode == http.StatusNotFound {
+			return nil, ErrProviderNotReachable
+		}
 		return nil, fmt.Errorf("unexpected response status %d", resp.StatusCode)
 	}
 	var respData Response
