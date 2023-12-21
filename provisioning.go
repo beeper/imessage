@@ -21,7 +21,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/id"
 
@@ -364,6 +363,7 @@ type SetRelayRequest struct {
 }
 
 func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
+	log := zerolog.Ctx(r.Context())
 	var req SetRelayRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Warn().Err(err).Msg("Got error parsing request")
@@ -636,7 +636,7 @@ func (prov *ProvisioningAPI) ChatwootStartChat(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	log.Info().
+	zerolog.Ctx(r.Context()).Info().
 		Str("phone_number", startChatRequest.PhoneNumber).
 		Str("email", startChatRequest.Email).
 		Msg("Got start chat request from Chatwoot bot")
