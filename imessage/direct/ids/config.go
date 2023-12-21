@@ -75,35 +75,14 @@ var defaultVersions = Versions{
 	SoftwareBuildID: "22G74",
 }
 
-var iPhoneVersions = Versions{
-	HardwareVersion: "iPhone9,3",
-	SoftwareName:    "iPhone OS",
-	SoftwareVersion: "19E258",
-	SoftwareBuildID: "15.4.1",
-}
-
-var PreferiPhoneVersions = false
-
-func GetDefaultiPhoneVersions() Versions {
-	return iPhoneVersions
-}
-
 func (v *Versions) DefaultIfEmpty() {
 	if v.HardwareVersion == "" {
-		if PreferiPhoneVersions {
-			*v = iPhoneVersions
-		} else {
-			*v = defaultVersions
-		}
+		*v = defaultVersions
 	}
 }
 
 func (v *Versions) IDSOSVersion() string {
 	v.DefaultIfEmpty()
-	if v.SoftwareName == "iOS" {
-		// This is weird
-		return fmt.Sprintf("%s_%s,%s", v.HardwareVersion, v.SoftwareVersion, v.SoftwareBuildID)
-	}
 	return fmt.Sprintf("%s,%s,%s", v.SoftwareName, v.SoftwareVersion, v.SoftwareBuildID)
 }
 

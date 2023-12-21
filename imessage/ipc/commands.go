@@ -753,7 +753,6 @@ func fnRegisterPhoneNumber(ctx context.Context, req ReqRegisterPhoneNumber) any 
 	}
 
 	log.Info().Msg("Register phone number called")
-	im.User.Versions = ids.GetDefaultiPhoneVersions()
 
 	// First check if this phone number is already in the process of being registered.
 	if certs, ok := im.User.AuthIDCertPairs["P:"+req.PhoneNumber]; ok && !certs.RefreshNeeded {

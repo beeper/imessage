@@ -137,9 +137,6 @@ func init() {
 	gob.Register(&RoomAvatarEventContent{})
 	gob.Register(&MarkedUnreadEventContent{})
 
-	// Beeper Mini is back to using Mac identifiers
-	ids.PreferiPhoneVersions = false
-
 	must(0, json.Unmarshal(must(os.ReadFile("config.json")), &global.Cfg))
 
 	global.NAC = &nacserv.Client{
