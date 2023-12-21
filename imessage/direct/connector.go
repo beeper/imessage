@@ -447,13 +447,27 @@ func (dc *Connector) registerIDSWithRefreshCredentialErrors(ctx context.Context,
 		return fmt.Errorf("failed to fetch validation data: %w", err)
 	}
 
+	registerEventProperties := func(properties map[string]any) map[string]any {
+		base := map[string]any{
+			"hardware_version": dc.User.HardwareVersion,
+			"software_name":    dc.User.SoftwareName,
+			"software_version": dc.User.SoftwareVersion,
+			"bi":               true,
+		}
+		if dc.NACServ.IsRelay {
+			base["registration_code"] = dc.NACServ.Token[:10] + "..."
+		}
+		maps.Copy(base, properties)
+
+		return base
+	}
+
 	err = dc.User.Register(ctx, fetchedHandles, validationData)
 	if err != nil {
-		analytics.Track("IMGo IDS Registered", map[string]any{
+		analytics.Track("IMGo IDS Registered", registerEventProperties(map[string]any{
 			"success": false,
 			"error":   err.Error(),
-			"bi":      true,
-		})
+		}))
 		if errors.Is(err, types.ErrActionRefreshCredentials) {
 			log.Err(err).Msg("IDS registration failed, sending credential refresh required event")
 			var re ids.RegisterError
@@ -466,10 +480,9 @@ func (dc *Connector) registerIDSWithRefreshCredentialErrors(ctx context.Context,
 		return fmt.Errorf("failed to register with IDS: %w", err)
 	}
 
-	analytics.Track("IMGo IDS Registered", map[string]any{
-		"bi":      true,
+	analytics.Track("IMGo IDS Registered", registerEventProperties(map[string]any{
 		"success": true,
-	})
+	}))
 
 	if dc.User.Conn != nil {
 		log.Info().Msg("Broadcasting updated handles")
