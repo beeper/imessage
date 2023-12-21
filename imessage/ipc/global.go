@@ -96,6 +96,7 @@ type IMContext struct {
 
 	StartConfirmed       bool
 	InitialConfigureDone bool
+	NACNotReachable      bool
 
 	Stopping atomic.Bool
 }

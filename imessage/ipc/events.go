@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"regexp"
 	"slices"
@@ -36,6 +37,7 @@ import (
 	"github.com/beeper/imessage/database"
 	"github.com/beeper/imessage/imessage"
 	"github.com/beeper/imessage/imessage/direct"
+	"github.com/beeper/imessage/imessage/direct/nacserv"
 	"github.com/beeper/imessage/imessage/direct/util/uri"
 	"github.com/beeper/imessage/msgconv"
 )
@@ -846,6 +848,10 @@ func handleEvent(evt any) {
 		handleDelivered(typedEvt)
 
 	case *direct.IDSRegisterFail:
+		if errors.Is(typedEvt.Error, nacserv.ErrProviderNotReachable) {
+			global.NACNotReachable = true
+			global.IPC.Send(CmdBridgeInfo, GetBridgeInfo())
+		}
 		analytics.Track("IMGo IDS Register Failure", map[string]any{
 			"bi":    true,
 			"error": typedEvt.Error.Error(),
@@ -919,6 +925,7 @@ func handleEvent(evt any) {
 		}
 		global.IPC.Send(CmdBridgeInfo, GetBridgeInfo())
 	case *direct.IDSActuallyReregistered:
+		global.NACNotReachable = false
 		global.IPC.Send(CmdBridgeInfo, GetBridgeInfo())
 	case *direct.IDSRegisterSuccess:
 		//go updateGroupOutgoingHandles()

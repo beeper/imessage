@@ -83,6 +83,9 @@ func GetBridgeInfo() *BridgeInfo {
 		}
 	}
 	resp.NextReregisterCheck = nextReregisterCheck.UTC()
+	if global.NACNotReachable {
+		resp.RegistrationProviderError = ErrBadRegistrationCode.Message
+	}
 
 	return &resp
 }
