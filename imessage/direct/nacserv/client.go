@@ -53,9 +53,9 @@ func (c *Client) FetchVersions(ctx context.Context) (*ids.Versions, error) {
 	var resp *Response
 	var err error
 	if !c.IsRelay {
-		resp, err = c.FetchValidationData(ctx)
+		resp, err = c.fetch(ctx, c.URL, nil, "versions (direct)")
 	} else {
-		resp, err = c.fetch(ctx, fmt.Sprintf("%s/api/v1/bridge/get-version-info", c.URL), []byte("{}"))
+		resp, err = c.fetch(ctx, fmt.Sprintf("%s/api/v1/bridge/get-version-info", c.URL), []byte("{}"), "versions (relay)")
 	}
 	if err != nil {
 		return nil, err
@@ -65,12 +65,12 @@ func (c *Client) FetchVersions(ctx context.Context) (*ids.Versions, error) {
 
 func (c *Client) FetchValidationData(ctx context.Context) (*Response, error) {
 	if !c.IsRelay {
-		return c.fetch(ctx, c.URL, nil)
+		return c.fetch(ctx, c.URL, nil, "validation data (direct)")
 	}
-	return c.fetch(ctx, fmt.Sprintf("%s/api/v1/bridge/get-validation-data", c.URL), []byte("{}"))
+	return c.fetch(ctx, fmt.Sprintf("%s/api/v1/bridge/get-validation-data", c.URL), []byte("{}"), "validation data (relay)")
 }
 
-func (c *Client) fetch(ctx context.Context, url string, body []byte) (*Response, error) {
+func (c *Client) fetch(ctx context.Context, url string, body []byte, dataType string) (*Response, error) {
 	log := zerolog.Ctx(ctx)
 	method := http.MethodGet
 	if body != nil {
@@ -85,7 +85,7 @@ func (c *Client) fetch(ctx context.Context, url string, body []byte) (*Response,
 		req.Header.Set("X-Beeper-Access-Token", c.BeeperToken)
 	}
 
-	log.Info().Str("url", req.URL.String()).Msg("Fetching nacserv data")
+	log.Info().Str("url", req.URL.String()).Str("data_type", dataType).Msg("Fetching nacserv data")
 
 	resp, data, err := httputil.Do(httputil.Normal, req)
 	if err != nil {
@@ -104,8 +104,10 @@ func (c *Client) fetch(ctx context.Context, url string, body []byte) (*Response,
 
 	var logEvent = log.Info().
 		Str("name", respData.Name).
+		Str("data_type", dataType).
 		Time("valid_until", respData.ValidUntil).
-		Str("error", respData.Error)
+		Str("error", respData.Error).
+		Bool("has_data", respData.Data != nil)
 	if respData.Versions != nil {
 		logEvent = logEvent.Object("versions", respData.Versions)
 	}
