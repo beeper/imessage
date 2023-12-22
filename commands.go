@@ -320,7 +320,7 @@ func fnRegisterPhoneNumberFinish(ce *WrappedCommandEvent) {
 		ce.Reply("How'd you get here 🤔")
 		return
 	} else if len(ce.Args) != 1 {
-		ce.Reply("Usage: register-phone-number-finish <sms_response>")
+		ce.Reply("Please enter the phone number registration response (starts with `REG-RESP?`) or use `cancel` to cancel.")
 		return
 	}
 	respText := ce.Args[0]
