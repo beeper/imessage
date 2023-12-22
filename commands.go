@@ -355,6 +355,7 @@ func fnRegisterPhoneNumberFinish(ce *WrappedCommandEvent) {
 	if err := ce.User.Update(ce.Ctx); err != nil {
 		ce.Reply("failed to update user: %v", err)
 	}
+	ce.Reply("Phone number registered")
 }
 
 var cmdRegisterPhoneNumberFinish = &commands.FullHandler{
