@@ -30,7 +30,6 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-        cache: 'gradle'
     - name: Build AAR
       run: gomobile bind -target=android -androidapi 26 -o imessage.aar ./imessage/ffi
     # - name: Publish to GitHub Packages
