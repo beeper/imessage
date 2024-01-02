@@ -3,6 +3,5 @@ set -e
 repo_dir=$(dirname $(realpath $0))
 pushd $repo_dir > /dev/null
 LDFLAGS="-X main.Tag=$(git describe --exact-match --tags 2>/dev/null) -X main.Commit=$(git rev-parse HEAD) -X 'main.BuildTime=$(date '+%b %_d %Y, %H:%M:%S')'"
-go build -ldflags "$LDFLAGS" -o .android-ipc-bin ./imessage/ipc/
+go build -ldflags "$LDFLAGS" -buildmode=c-shared -o imgo.so ./imessage/ffi/
 popd > /dev/null
-rlwrap -H "$HOME/.android-ipc_history" $repo_dir/.android-ipc-bin 2> >(zeroparse >&2) | (trap '' INT; jq -c)

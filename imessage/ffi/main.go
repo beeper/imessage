@@ -14,14 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-package main
+package ffi
 
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
@@ -36,10 +38,13 @@ import (
 	_ "go.mau.fi/util/dbutil/litestream"
 	"go.mau.fi/util/exzerolog"
 	"go.mau.fi/zeroconfig"
+	_ "golang.org/x/mobile/bind"
 
 	"github.com/beeper/imessage/analytics"
 	"github.com/beeper/imessage/database"
+	"github.com/beeper/imessage/imessage/direct"
 	"github.com/beeper/imessage/imessage/direct/ids"
+	"github.com/beeper/imessage/imessage/direct/nacserv"
 	"github.com/beeper/imessage/imessage/direct/util/uri"
 	"github.com/beeper/imessage/ipc"
 	"github.com/beeper/imessage/msgconv"
@@ -89,8 +94,8 @@ func analyticsTrackOverIPC(event string, properties map[string]any) error {
 	})
 }
 
-func main() {
-	writer := ipc.NewLockedWriter(os.Stdout)
+func Start() {
+	writer := ipc.NewLockedWriter(&FFIStdout)
 	zeroconfig.RegisterWriter(writerTypeStdoutIPC, func(config *zeroconfig.WriterConfig) (io.Writer, error) {
 		return writer, nil
 	})
@@ -121,7 +126,7 @@ func main() {
 	}
 
 	ipcLog := log.With().Str("component", "ipc").Logger()
-	global.IPC = ipc.NewProcessor(writer, os.Stdin, &ipcLog)
+	global.IPC = ipc.NewProcessor(writer, FFIStdinReader, &ipcLog)
 	global.IPC.SetHandler(CmdLogin, ipc.TypedHandler(fnLogin))
 	global.IPC.SetHandler(CmdMessage, ipc.TypedHandler(fnMessage))
 	global.IPC.SetHandler(CmdMultipartMessage, ipc.TypedHandler(fnMultipartMessage))
@@ -228,7 +233,6 @@ func main() {
 		log.Err(err).Msg("Failed to close database")
 	}
 	log.Info().Msg("Shutdown preparations complete, exiting")
-	os.Exit(0)
 }
 
 func initialConfigure(ctx context.Context) {
@@ -352,4 +356,34 @@ type ReqStarted struct {
 	LoggedIn bool `json:"logged_in"`
 
 	PendingNACURL bool `json:"pending_nac_url"`
+}
+
+func InitConfig(data []byte) {
+	global.NAC = &nacserv.Client{
+		URL:     global.Cfg.NACServURL,
+		Token:   global.Cfg.NACServToken,
+		IsRelay: global.Cfg.NACServIsRelay,
+
+		BeeperToken: global.Cfg.IMAToken,
+	}
+
+	global.IM = direct.NewConnector(global.NAC, handleEvent, nil, nil, global.Cfg.EnablePairECSending, nil, manualLookupRatelimiter)
+	global.IM.LoginTestConfig = global.Cfg.LoginTest
+
+	global.SecondaryIM = direct.NewConnector(global.NAC, handleSecondaryEvent, nil, nil, false, nil, manualLookupRatelimiter)
+	if global.Cfg.AttachmentDir == "" {
+		global.Cfg.AttachmentDir = "attachments"
+	}
+	if global.Cfg.DeviceName != "" {
+		ids.DeviceName = global.Cfg.DeviceName
+	}
+	var err error
+	global.Cfg.AttachmentDir, err = filepath.Abs(global.Cfg.AttachmentDir)
+	if err != nil {
+		panic(fmt.Errorf("failed to get absolute path of attachment directory: %w", err))
+	}
+	err = os.MkdirAll(global.Cfg.AttachmentDir, 0700)
+	if err != nil {
+		panic(fmt.Errorf("failed to create attachment directory: %w", err))
+	}
 }
