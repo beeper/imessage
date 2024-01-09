@@ -683,6 +683,9 @@ func (md *MMCSDownloader) Decrypt(ctx context.Context, prog *DownloadProgress, f
 		hasher.Write(data)
 		ctr.XORKeyStream(data, data)
 		_, err = file.WriteAt(data, offset)
+		if err != nil {
+			return fmt.Errorf("failed to write file: %w", err)
+		}
 		offset += int64(n)
 
 		prog.DecryptedBytes += n
