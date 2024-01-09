@@ -454,7 +454,9 @@ func fnMessage(ctx context.Context, req ReqMessage) any {
 	case event.StateMember:
 		memberContent := req.Event.Content.Parsed.(*event.MemberEventContent)
 		parsed, err := uri.ParseIdentifier(*req.Event.StateKey, uri.ParseiMessageDM)
-
+		if err != nil {
+			return err
+		}
 		newParticipants := slices.Clone(portal.Participants)
 		if memberContent.Membership == event.MembershipLeave {
 			newParticipants = slices.DeleteFunc(newParticipants, func(u uri.ParsedURI) bool {
