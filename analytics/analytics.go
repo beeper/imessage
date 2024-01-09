@@ -43,7 +43,7 @@ var Version string
 
 type TrackImplementationFunc func(event string, properties map[string]any) error
 
-var trackImplmentationFunc TrackImplementationFunc = trackSyncOverHttp
+var trackImplementationFunc TrackImplementationFunc = trackSyncOverHttp
 
 func trackSyncOverHttp(event string, properties map[string]any) error {
 	var buf bytes.Buffer
@@ -92,7 +92,7 @@ func Track(event string, properties ...map[string]any) {
 		props["bridge_version"] = Version
 		// Identify to mixpanel who we are
 		props["mp_lib"] = bridgeType
-		err := trackImplmentationFunc(event, props)
+		err := trackImplementationFunc(event, props)
 		if err != nil {
 			glog.Err(err).Str("event", event).Msg("Error tracking event")
 		} else {
@@ -113,7 +113,7 @@ func Init(cfg config.AnalyticsConfig, log zerolog.Logger, briType BridgeType, tr
 	}).String()
 
 	if trackFunc != nil {
-		trackImplmentationFunc = trackFunc
+		trackImplementationFunc = trackFunc
 	}
 
 	if IsEnabled() {
