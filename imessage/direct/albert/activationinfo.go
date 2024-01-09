@@ -71,7 +71,7 @@ func NewActivationInfo(privateKey *rsa.PrivateKey, versions ids.Versions) (*Acti
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE REQUEST", Bytes: csr})
 
 	deviceClass := versions.SoftwareName
-	if deviceClass == "macOS" {
+	if deviceClass == "macOS" || deviceClass == "Mac OS X" {
 		deviceClass = "MacOS"
 	}
 	udid := versions.UniqueDeviceID
