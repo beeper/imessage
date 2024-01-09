@@ -391,13 +391,16 @@ func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(cli.URL, "https://registration-relay.beeper") {
 		cli.BeeperToken = user.bridge.Config.Bridge.Provisioning.SharedSecret
 	}
-	versions, err := cli.FetchVersions(r.Context())
+	timeoutCtx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	versions, err := cli.FetchVersions(timeoutCtx)
+	cancel()
 	if err != nil {
 		log.Err(err).
 			Str("url", req.URL).
 			Str("token", req.Token[:10]+"…").
 			Msg("Failed to fetch versions from relay")
-		if errors.Is(err, nacserv.ErrProviderNotReachable) {
+		if errors.Is(err, nacserv.ErrProviderNotReachable) || errors.Is(err, context.Canceled) {
 			jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
 				Err:     "Invalid registration code or provider not reachable",
 				ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
