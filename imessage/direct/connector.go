@@ -235,6 +235,12 @@ func (dc *Connector) RegisterIDS(ctx context.Context, forceRegister bool) error 
 
 	if errors.Is(err, types.ErrActionRefreshCredentials) {
 		err = nil
+	} else if errors.Is(err, nacserv.ErrProviderNotReachable) {
+		dc.EventHandler(&NACServFail{err})
+		dc.nextReregisterCheck = time.Now().Add(1 * time.Hour)
+		dc.reregisterTicker.Reset(1 * time.Hour)
+		zerolog.Ctx(ctx).Debug().
+			Msg("Reset reregister ticker to retry in an hour after nacserv error")
 	} else if err != nil {
 		dc.EventHandler(&IDSRegisterFail{err})
 	} else {
@@ -829,8 +835,7 @@ func (dc *Connector) handleAPNSMessage(ctx context.Context, payload *apns.SendMe
 			log.Debug().Msg("Re-fetching own handles due to c:130 from self")
 			err = dc.RegisterIDS(ctx, false)
 			if err != nil {
-				log.Err(err).Msg("Error re-registering IDS")
-				dc.EventHandler(&IDSRegisterFail{err})
+				log.Err(err).Msg("Error re-registering IDS after c:130")
 			}
 			// TODO broadcast handle to recent entries in IDS cache (without looking up anyone)?
 		}
@@ -890,6 +895,7 @@ type RefreshCredentialsRequired struct {
 type IDSRegisterFail struct {
 	Error error
 }
+type NACServFail IDSRegisterFail
 type BridgeInfoUpdated struct{}
 type HandlesUpdated struct {
 	OldHandles []uri.ParsedURI

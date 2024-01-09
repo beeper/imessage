@@ -38,6 +38,7 @@ func init() {
 		"im-ids-not-registered":      "Missing iMessage registration.",
 		"im-ids-refresh-credentials": "Credentials expired. Please use the Reconnect button to log in again.",
 		"im-nacserv-not-configured":  "Please enter an iMessage registration code to use the bridge.",
+		"im-nacserv-fail":            "Registration provider couldn't be reached when trying to reregister with iMessage.",
 	})
 }
 
@@ -68,6 +69,8 @@ func (user *User) HandleEvent(evt any) {
 		user.BridgeState.Send(status.BridgeState{StateEvent: status.StateConnected})
 	case *direct.IDSRegisterFail:
 		user.BridgeState.Send(status.BridgeState{StateEvent: status.StateUnknownError, Error: "im-ids-register-fail"})
+	case *direct.NACServFail:
+		user.BridgeState.Send(status.BridgeState{StateEvent: status.StateBadCredentials, Error: "im-nacserv-fail"})
 	case *direct.RefreshCredentialsRequired:
 		user.BridgeState.Send(status.BridgeState{
 			StateEvent: status.StateBadCredentials,
