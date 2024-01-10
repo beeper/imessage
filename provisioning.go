@@ -261,10 +261,18 @@ func (prov *ProvisioningAPI) Reregister(w http.ResponseWriter, r *http.Request) 
 	err := user.IM.RegisterIDS(r.Context(), force)
 	if err != nil {
 		log.Err(err).Msg("Failed to reregister IDS")
-		jsonResponse(w, http.StatusInternalServerError, &mautrix.RespError{
-			ErrCode: "M_UNKNOWN",
-			Err:     "Internal error",
-		})
+
+		if errors.Is(err, nacserv.ErrProviderNotReachable) {
+			jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
+				Err:     "Invalid registration code or provider not reachable",
+				ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
+			})
+		} else {
+			jsonResponse(w, http.StatusInternalServerError, &mautrix.RespError{
+				ErrCode: "M_UNKNOWN",
+				Err:     "Internal error",
+			})
+		}
 		return
 	}
 	if req.ClearIDSCache {
@@ -436,10 +444,18 @@ func (prov *ProvisioningAPI) SetRelay(w http.ResponseWriter, r *http.Request) {
 			err := user.IM.RegisterIDS(r.Context(), true)
 			if err != nil {
 				log.Err(err).Msg("Failed to reregister IDS")
-				jsonResponse(w, http.StatusInternalServerError, &mautrix.RespError{
-					ErrCode: "M_UNKNOWN",
-					Err:     "Internal error",
-				})
+
+				if errors.Is(err, nacserv.ErrProviderNotReachable) {
+					jsonResponse(w, http.StatusBadRequest, &mautrix.RespError{
+						Err:     "Invalid registration code or provider not reachable",
+						ErrCode: "COM.BEEPER.BAD_REGISTRATION_CODE",
+					})
+				} else {
+					jsonResponse(w, http.StatusInternalServerError, &mautrix.RespError{
+						ErrCode: "M_UNKNOWN",
+						Err:     "Internal error",
+					})
+				}
 				return
 			}
 		}
