@@ -178,7 +178,7 @@ func (dc *Connector) FinishAuth(ctx context.Context, response *ids.AuthResponse)
 const day = 24 * time.Hour
 const DefaultRegisterCheckInterval = 1 * day
 const MinRegisterCheckInterval = 30 * time.Minute
-const MaxReregisterInterval = 7 * day
+const MaxReregisterInterval = 45 * day
 const ArbitraryRegisterCheckBuffer = 2 * time.Minute
 
 func (dc *Connector) IDSReregisterLoop(ctx context.Context) {
